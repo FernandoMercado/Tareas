@@ -1,0 +1,87 @@
+# Fernando Mercado & Diego MEstre Tores de Hanoi
+
+.data
+Discos: .asciiz "Introducir Numero de discos  : "
+
+.text
+.globl main
+main:
+    li $v0,  4          # print string
+    la $a0,  Discos
+    syscall
+    li $v0,  5          # read integer
+    syscall
+
+    # Posiciones posibles 
+    add $a0, $v0, $zero #cargamos a $a0 el numero introducido 
+    li $a1, 'A'
+    li $a2, 'B'
+    li $a3, 'C'
+
+    jal Torres           # call hanoi routine
+
+    li $v0, 10          # exit
+    syscall
+
+Torres:
+
+    #Guardamos datos en el Stack
+    addi $sp, $sp, -20 
+    sw   $ra, 0($sp)	
+    sw   $s0, 4($sp)	#almacena el numero que se va a manipular 
+    sw   $s1, 8($sp)	#Posición de origen
+    sw   $s2, 12($sp)	#posición de destno
+    sw   $s3, 16($sp)	#Posición auxiliar
+	#Disco y posiciónes se guardan en su respectivo stack
+    add $s0, $a0, $zero	
+    add $s1, $a1, $zero
+    add $s2, $a2, $zero
+    add $s3, $a3, $zero
+
+    addi $t1, $zero, 1		#usamos el $t1 como bandera
+    beq $s0, $t1, print	#si $s0 es == 1 se completo el movimiento 
+	
+    swapBC:
+
+        addi $a0, $s0, -1	#disco N-1 //esto nos sirve para amontonar los discos de mayor a menor
+        add $a1, $s1, $zero	#
+        add $a2, $s3, $zero
+        add $a3, $s2, $zero
+        jal Torres	#esto forma un loopp que se rompe cuando $s0 == 1 Inicialmente se ejecuta N veces para amontonar los discos 
+       
+        j print
+
+    swapAB:
+
+        addi $a0, $s0, -1
+        add $a1, $s3, $zero
+        add $a2, $s2, $zero
+        add $a3, $s1, $zero
+        jal Torres
+
+    reset:
+
+        lw   $ra, 0($sp)        # Restauramos el registro del stack
+        #cargamos los valores almacenados en el stack 
+        lw   $s0, 4($sp)	#numero que se va a mover
+        lw   $s1, 8($sp)	#Posición de origen
+        lw   $s2, 12($sp)	#Posición de destino
+        lw   $s3, 16($sp)	#Posición auxiliar
+
+        addi $sp, $sp, 20       # restauramos el SP 
+
+        jr $ra
+
+    print:
+        li $v0,  1              # Print disco que se va a mover
+        add $a0, $s0, $zero
+        syscall
+        li $v0,  11             # Print origen del disco
+        add $a0, $s1, $zero
+        syscall
+        li $v0,  11             # Print destino del disco
+        add $a0, $s2, $zero
+        syscall
+
+        beq $s0, $t1, reset
+        j swapAB
